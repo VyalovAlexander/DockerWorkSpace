@@ -1,0 +1,63 @@
+version: '2'
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8181:80"
+      - "443:443"
+    volumes:
+      - ./nginx/hosts:/etc/nginx/conf.d
+      - ./app:/var/www
+      - ./nginx/logs:/var/log/nginx
+    links:
+      - php
+  node:
+    image: node:6.14.2
+    volumes:
+          - ./app:/var/www
+    working_dir: /var/www
+    #command: npm install
+    #command: npm run watch
+  php:
+    build: ./php
+    links:
+      - postgres
+      - redis
+    volumes:
+      - ./app:/var/www
+    #command: composer install
+    #command: chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+    #command: rm /public/storage
+    #command: php artisan storage:link
+    #command: php artisan cache:clear
+    #command: php artisan migrate
+    command: php-fpm
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres/data:/data/postgres
+    environment:
+      POSTGRES_DB: dbname
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_USER: dbuser
+      PGDATA: /data/postgres
+  redis:
+      restart: always
+      image: redis:3.2-alpine
+      ports:
+        - "6340:6379"
+      volumes:
+        - ./redis/data:/data
+ # app:
+ #   build: ./app
+ #   volumes:
+ #     - ./app:/var/www
+#    links:
+#      - postgres
+ #     - php
+ #     - node
+ #     - redis
+
+
