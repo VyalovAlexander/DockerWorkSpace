@@ -1,63 +1,76 @@
 version: '2'
 services:
   nginx:
-    image: nginx:latest
+    build:
+       context: ./
+       dockerfile: ./docker/nginx/Dockerfile
+    env_file:
+      - .env
     ports:
-      - "8181:80"
-      - "443:443"
+      - "${NGINX_HTTP_EXTERNAL_PORT}:80"
+      - "${NGINX_HTTPS_EXTERNAL_PORT}:443"
     volumes:
-      - ./nginx/hosts:/etc/nginx/conf.d
-      - ./app:/var/www
-      - ./nginx/logs:/var/log/nginx
+      - ./docker/nginx/hosts:/etc/nginx/conf.d
+      - .:/var/www
+      - ./docker/nginx/logs:/var/log/nginx
+    #command: sh /docker-command.sh
     links:
       - php
+      - node
   node:
-    image: node:6.14.2
+    build:
+      context: ./
+      dockerfile: ./docker/node/Dockerfile
+    env_file:
+      - .env
     volumes:
-          - ./app:/var/www
-    working_dir: /var/www
-    #command: npm install
-    #command: npm run watch
+      - .:/var/www
+      - ./docker/node/logs:/root/.npm/_logs
+    command: sh /docker-command.sh
   php:
-    build: ./php
+    build:
+      context: ./
+      dockerfile: ./docker/php/Dockerfile
+      args:
+        - XDEBUG_REMOTE_HOST=${XDEBUG_REMOTE_HOST}
+        - XDEBUG_REMOTE_PORT=${XDEBUG_REMOTE_PORT}
+    env_file:
+      - .env
     links:
       - postgres
       - redis
     volumes:
-      - ./app:/var/www
-    #command: composer install
-    #command: chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-    #command: rm /public/storage
-    #command: php artisan storage:link
-    #command: php artisan cache:clear
-    #command: php artisan migrate
-    command: php-fpm
+      - .:/var/www
+      - ./docker/php/logs:/var/log
+    command: sh /docker-command.sh
   postgres:
-    image: postgres:latest
+    build:
+      context: ./
+      dockerfile: ./docker/postgres/Dockerfile
+    env_file:
+      - .env
     ports:
-      - 5432:5432
+      - ${POSTGRES_EXTERNAL_PORT}:5432
     volumes:
-      - ./postgres/data:/data/postgres
+      - ./docker/postgres/data:/data/postgres
+    #command: sh /docker-command.sh
     environment:
-      POSTGRES_DB: dbname
-      POSTGRES_PASSWORD: dbpass
-      POSTGRES_USER: dbuser
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
       PGDATA: /data/postgres
   redis:
-      restart: always
-      image: redis:3.2-alpine
-      ports:
-        - "6340:6379"
-      volumes:
-        - ./redis/data:/data
- # app:
- #   build: ./app
- #   volumes:
- #     - ./app:/var/www
-#    links:
-#      - postgres
- #     - php
- #     - node
- #     - redis
+    build:
+      context: ./
+      dockerfile: ./docker/redis/Dockerfile
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:6379"
+    volumes:
+      - ./docker/redis/data:/data
+    #command: sh /docker-command.sh
+
 
 

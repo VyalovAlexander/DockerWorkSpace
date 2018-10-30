@@ -1,1 +1,7 @@
 .idea/
+docker/postgres/data
+docker/nginx/logs
+docker/node/logs
+docker/php/logs
+docker/postgres/data
+docker/redis/data
